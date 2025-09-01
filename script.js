@@ -1,40 +1,24 @@
 async function buscarClima() {
-    const cidade = document.getElementById("cidade").value.trim();
-    const resultado = document.getElementById("resultado");
+  const cidade = document.getElementById("cidade").value.trim();
+  const resultado = document.getElementById("resultado");
 
-    if (!cidade) {
-        resultado.innerHTML = "Digite uma cidade!";
-        return;
-    }
+  if (!cidade) return resultado.innerHTML = "Digite uma cidade!";
 
-    try {
-        // Buscar latitude e longitude
-        const geoResp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${cidade}`);
-        const geoDados = await geoResp.json();
+  resultado.innerHTML = "Carregando...";
 
-        if (geoDados.length === 0) {
-            resultado.innerHTML = "Cidade não encontrada";
-            return;
-        }
+  try {
+    const geo = await (await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cidade)}`)).json();
+    if (!geo.length) return resultado.innerHTML = "Cidade não encontrada";
 
-        const lat = geoDados[0].lat;
-        const lon = geoDados[0].lon;
+    const { lat, lon } = geo[0];
+    const dados = await (await fetch(`https://my.meteoblue.com/packages/basic-1h?apikey=8NlspQzxfOTGL7Fa&lat=${lat}&lon=${lon}&format=json`)).json();
 
-        const apiKey = "8NlspQzxfOTGL7Fa";
-        const url = `https://my.meteoblue.com/packages/basic-1h?apikey=${apiKey}&lat=${lat}&lon=${lon}&format=json`;
+    resultado.innerHTML = `<strong>${cidade}</strong><br>Temperatura: ${dados.data.temperature[0]}°C<br>Horário: ${new Date().toLocaleTimeString()}`;
 
-        const resposta = await fetch(url);
-
-        if (!resposta.ok) throw new Error("Erro ao buscar dados");
-
-        const dados = await resposta.json();
-        const temperatura = dados.data.temperature[0];
-        const horaAtual = new Date().toLocaleTimeString();
-
-        resultado.innerHTML = `
-            <strong>${cidade}</strong><br>
-            Temperatura: ${temperatura}°C<br>
-            Horário: ${horaAtual}
+  } catch (e) {
+    resultado.innerHTML = "Erro: " + e.message;
+  }
+}            Horário: ${horaAtual}
         `;
 
     } catch (error) {
